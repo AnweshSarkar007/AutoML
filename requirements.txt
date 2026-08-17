@@ -1,0 +1,14 @@
+# Pinned to minor versions (~=) so patch releases apply automatically but
+# minor/major bumps require a deliberate update. pydantic is the one
+# exception (>=2), per CLAUDE.md.
+
+fastapi~=0.115.0
+uvicorn[standard]~=0.32.0
+playwright~=1.48.0
+pydantic>=2
+anthropic~=0.39.0
+pytest~=8.3.0
+pytest-asyncio~=0.24.0
+ruff~=0.7.0
+black~=24.10.0
+python-dotenv~=1.0.0
