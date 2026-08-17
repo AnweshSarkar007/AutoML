@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Cowpath Bank — Accounts</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body onload="loadDashboard()">
+    <main>
+      <h1>Accounts</h1>
+      <table>
+        <thead>
+          <tr>
+            <th>Account</th>
+            <th>Type</th>
+            <th>Balance</th>
+          </tr>
+        </thead>
+        <!--
+          Deliberately no data-testid on account rows or links, and no
+          durable id: account ids are regenerated on every login (see
+          mock-bank/backend/data.py), so any selector built from a row's id
+          is stale by the very next session. The only handle that survives
+          across sessions is the visible account name text — this page
+          exists to force the locator ladder past its testid/css rungs and
+          prove out role+name and text-content resolution instead.
+        -->
+        <tbody id="accounts-body"></tbody>
+      </table>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>
