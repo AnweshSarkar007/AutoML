@@ -26,8 +26,13 @@ sys.path.insert(0, str(ROOT / "mock-bank"))
 BANK_SERVER_URL = "http://127.0.0.1:8000"
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def browser() -> Iterator[Browser]:
+    # Function-scoped, not session-scoped: Playwright's sync API refuses to
+    # nest a second sync_playwright() context inside one that's already
+    # open ("using Playwright Sync API inside the asyncio loop"), and
+    # run_flow() always opens its own. A session-scoped browser here would
+    # collide with any test that calls run_flow() later in the same run.
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch()
         yield browser
