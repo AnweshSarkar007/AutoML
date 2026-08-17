@@ -371,9 +371,14 @@ agree. Adding a `StepKind` means updating `schema.py`, `engine.py`, `docs/artifa
     file, which is exactly what invariant I4 forbids. Reject this combination at validation time.
   - `type ∈ string | number`, default `"string"` — a hint for how the harness coerces the resolved
     value, not a redaction signal.
-- Serialization: `json.dumps(flow.model_dump(mode="json"), indent=2, ensure_ascii=False)` + trailing
-  newline. Key order = field declaration order. No `exclude_none`. Deterministic bytes so artifacts
-  diff cleanly in git.
+- Serialization: `json.dumps(flow.model_dump(mode="json", exclude_none=True), indent=2,
+  ensure_ascii=False)` + trailing newline. Key order = field declaration order.
+  `exclude_none=True` is why a `goto` step's JSON has no `binding`/`output`/`key` keys at all rather
+  than carrying them as `null` — that's what makes the worked example above the literal output, not a
+  simplification of it. Determinism doesn't require the opposite choice: the same `Flow` always
+  produces the same bytes either way, so this fixes the null noise a strict "no exclude_none" reading
+  would have on every kind-conditional field (`Step.url`/`binding`/`output`/`key`,
+  `Locator.role`/`nth`/`viewport`, `Binding.key`/`value`) without giving up reproducibility.
 - Filename must equal `flow.id` + `.json`; `storage.save_flow` validates this and refuses otherwise.
 
 ---
