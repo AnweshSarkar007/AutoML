@@ -256,7 +256,11 @@ value before serialization, on both paths.
 
 **Screenshots:** password inputs render masked by the browser, so screenshots are safe — but any value
 *read out of the DOM* (`input.value`, `textContent`) goes through `redact()` like anything else.
-Bindings are stored in artifacts as **references**, never values: `{"source":"env","key":"BANK_PASSWORD"}`.
+`env`/`input`/`extracted` bindings are stored in artifacts as **references**, never values —
+`{"source":"env","key":"BANK_PASSWORD"}` — so a secret binding never puts a secret byte in the file.
+`literal` bindings do store a value directly (that is the point of that source kind), which is exactly
+why a `literal` binding is forbidden from being `secret` (see §6): the one binding kind that writes its
+value into the artifact is the one kind I4 does not allow to carry a secret.
 
 ---
 
@@ -290,6 +294,13 @@ boundaries.
 agree. Adding a `StepKind` means updating `schema.py`, `engine.py`, `docs/artifact-spec.md`, and tests
 **in one commit**.
 
+> **Reconciled with WORKFLOW.md 2.1 on Day 2** — the plan's field sketch (`navigate`/`assert_visible`,
+> `timeout_ms`, env-only bindings) predates this file and disagreed with it in three places. Resolved:
+> keep this file's naming (`goto`/`press`/`budget_ms`/`title`/`origin`/`created_at`), add the `on_fail`
+> and `description` fields WORKFLOW.md called for (§12 already assumed `on_fail` existed — this was a
+> real gap), and widen `Binding.source` to the four kinds below so a flow can chain an extracted value
+> into a later step, not just read credentials from `.env`.
+
 ```json
 {
   "schema_version": 1,
@@ -299,35 +310,44 @@ agree. Adding a `StepKind` means updating `schema.py`, `engine.py`, `docs/artifa
   "created_at": "2026-08-17T14:25:30Z",
   "created_by": { "mode": "discovery", "run_id": "20260817T142530Z-9f3ab1", "model": "claude-opus-5" },
   "bindings": [
-    { "name": "username", "source": "env", "key": "BANK_USERNAME", "secret": false },
-    { "name": "password", "source": "env", "key": "BANK_PASSWORD", "secret": true }
+    { "name": "username", "source": "env", "type": "string", "key": "BANK_USERNAME", "secret": false },
+    { "name": "password", "source": "env", "type": "string", "key": "BANK_PASSWORD", "secret": true }
   ],
   "outputs": ["savings_balance"],
   "steps": [
-    { "id": "goto_login", "kind": "goto", "url": "/login", "budget_ms": 8000, "locators": [] },
-    { "id": "fill_username", "kind": "fill", "binding": "username", "budget_ms": 8000,
+    { "id": "goto_login", "kind": "goto", "description": "Open the login page", "url": "/login",
+      "budget_ms": 8000, "on_fail": "abort", "locators": [] },
+    { "id": "fill_username", "kind": "fill", "description": "Enter the username",
+      "binding": "username", "budget_ms": 8000, "on_fail": "abort",
       "locators": [
         { "strategy": "testid",   "value": "username" },
         { "strategy": "label",    "value": "Username" },
         { "strategy": "css",      "value": "#user" }
       ] },
-    { "id": "open_savings", "kind": "click", "budget_ms": 8000,
+    { "id": "open_savings", "kind": "click", "description": "Open the savings account detail page",
+      "budget_ms": 8000, "on_fail": "handoff",
       "locators": [
         { "strategy": "role_name", "role": "link", "value": "Savings", "nth": 0 },
         { "strategy": "text",      "value": "Savings" },
         { "strategy": "css",       "value": "tr[data-account-type='savings'] a" },
         { "strategy": "coordinates", "value": "612,318", "viewport": { "w": 1280, "h": 720 } }
       ] },
-    { "id": "read_savings_balance", "kind": "extract", "output": "savings_balance", "budget_ms": 12000,
+    { "id": "read_savings_balance", "kind": "extract", "description": "Read the rendered balance",
+      "output": "savings_balance", "budget_ms": 12000, "on_fail": "retry",
       "locators": [ { "strategy": "testid", "value": "balance-amount" } ] }
   ]
 }
 ```
 
-- `StepKind` ∈ `goto | click | fill | press | wait_for | extract`. Closed set.
-- `LocatorStrategy` ∈ `testid | role_name | label | text | css | coordinates`, and **the `locators`
-  list must be stored in exactly that rank order** — the engine walks it front to back and does not
-  re-sort. Enforce with a `@model_validator(mode="after")`.
+- `StepKind` ∈ `goto | click | fill | press | wait_for | extract`. Closed set. `press` carries a
+  required `key` field (e.g. `"Enter"`); `goto` carries a required `url`; `fill` carries a required
+  `binding` (a name declared in `Flow.bindings`); `extract` carries a required `output` (a name that
+  must appear in `Flow.outputs` or be referenced by some `Binding.source == "extracted"`).
+- Every `Step` carries `description` (required, plain English — the intent the model stated when this
+  step was recorded, not a restatement of the kind) and `on_fail ∈ abort | retry | handoff`, default
+  `"abort"`. `LocatorStrategy` ∈ `testid | role_name | label | text | css | coordinates`, and **the
+  `locators` list must be stored in exactly that rank order** — the engine walks it front to back and
+  does not re-sort. Enforce with a `@model_validator(mode="after")`.
 - `role` is required iff `strategy == "role_name"`; `viewport` is required iff
   `strategy == "coordinates"`. `nth` disambiguates multiple matches.
 - **Coordinates rung rules:** always last; skipped at replay if the live viewport differs from the
@@ -337,6 +357,20 @@ agree. Adding a `StepKind` means updating `schema.py`, `engine.py`, `docs/artifa
 - `budget_ms` is the whole-step budget. Per-rung budget is
   `rung_budget(remaining_ms, rungs_left) = max(300, remaining_ms // rungs_left)` — a pure function in
   `locators.py`, unit-tested independently of Playwright. The ladder aborts when `remaining_ms < 300`.
+- **`Binding.source`** ∈ four kinds, each with its own required companion field:
+  - `"env"` — `key` names an environment variable (via `app.config`); used for credentials. `secret`
+    marks it for the redactor regardless of source.
+  - `"input"` — resolved by the caller at invocation time (CLI `--input name=value`, or the discovery
+    harness); the artifact only declares that the flow needs it, not where the value comes from. This
+    is what makes a flow reusable with different inputs and no re-recording (see `docs/artifact-spec.md`).
+  - `"extracted"` — `key` names another step's `output`; resolved from that step's result within the
+    same run. A `Flow`-level validator confirms the referenced step exists and precedes the binding's
+    use.
+  - `"literal"` — `value` is a fixed constant stored directly in the artifact. **`secret` must be
+    `false` for a literal binding** — a secret literal would put the real value in a committed JSON
+    file, which is exactly what invariant I4 forbids. Reject this combination at validation time.
+  - `type ∈ string | number`, default `"string"` — a hint for how the harness coerces the resolved
+    value, not a redaction signal.
 - Serialization: `json.dumps(flow.model_dump(mode="json"), indent=2, ensure_ascii=False)` + trailing
   newline. Key order = field declaration order. No `exclude_none`. Deterministic bytes so artifacts
   diff cleanly in git.
