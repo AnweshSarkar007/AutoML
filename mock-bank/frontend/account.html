@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Cowpath Bank — Account</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body onload="loadAccountDetail()">
+    <main>
+      <p><a href="/dashboard.html">&larr; Accounts</a></p>
+      <h1 id="account-name">&nbsp;</h1>
+      <p id="account-type"></p>
+
+      <h2>Balance</h2>
+      <p class="balance balance-loading" data-testid="account-balance-loading">Loading balance&hellip;</p>
+
+      <!--
+        Never clicked by automation: this exists so Day 5's safety policy
+        has a real destructive action to deny (its text and testid both
+        match the transfer/pay/send/delete/confirm denylist).
+      -->
+      <button type="button" data-testid="transfer-funds" onclick="alert('Transfers are not available in this demo.')">
+        Transfer funds
+      </button>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>
