@@ -90,8 +90,11 @@ fails the viewport check yields `NeedsHuman`, never a blind click.
 
 ## Annotated example
 
-The reference flow, `artifacts/get_savings_balance.json`, hand-written for Day 2's gate and later
-reproduced by the Day 4 discovery agent unchanged:
+The reference flow — recorded for Day 2's gate and, on Day 4, expected to be reproducible by the
+discovery agent unchanged. Same values as
+[`artifacts/get_savings_balance.json`](../artifacts/get_savings_balance.json), condensed onto fewer
+lines for readability here (the committed file is the two-space-indented `save_flow` output; this is
+not a different or simplified flow, just reformatted):
 
 ```json
 {
@@ -99,19 +102,19 @@ reproduced by the Day 4 discovery agent unchanged:
   "id": "get_savings_balance",
   "title": "Read the savings account balance",
   "origin": "http://127.0.0.1:8000",
-  "created_at": "2026-08-17T14:25:30Z",
-  "created_by": { "mode": "discovery", "run_id": "20260817T142530Z-9f3ab1", "model": "claude-opus-5" },
+  "created_at": "2026-08-17T20:32:00Z",
+  "created_by": { "mode": "manual", "run_id": "day2-hand-authored" },
   "bindings": [
-    { "name": "username", "source": "env", "key": "BANK_USERNAME", "secret": false },
-    { "name": "password", "source": "env", "key": "BANK_PASSWORD", "secret": true }
+    { "name": "username", "source": "env", "type": "string", "key": "BANK_USERNAME", "secret": false },
+    { "name": "password", "source": "env", "type": "string", "key": "BANK_PASSWORD", "secret": true }
   ],
   "outputs": ["savings_balance"],
   "steps": [
     { "id": "goto_login", "kind": "goto", "description": "Open the login page", "url": "/login.html",
-      "budget_ms": 8000, "locators": [] },
+      "budget_ms": 8000, "on_fail": "abort", "locators": [] },
 
     { "id": "fill_username", "kind": "fill", "description": "Enter the username",
-      "binding": "username", "budget_ms": 8000,
+      "binding": "username", "budget_ms": 8000, "on_fail": "abort",
       "locators": [
         { "strategy": "testid", "value": "username" },
         { "strategy": "label",  "value": "Username" },
@@ -119,7 +122,7 @@ reproduced by the Day 4 discovery agent unchanged:
       ] },
 
     { "id": "fill_password", "kind": "fill", "description": "Enter the password",
-      "binding": "password", "budget_ms": 8000,
+      "binding": "password", "budget_ms": 8000, "on_fail": "abort",
       "locators": [
         { "strategy": "testid", "value": "password" },
         { "strategy": "label",  "value": "Password" },
@@ -127,21 +130,21 @@ reproduced by the Day 4 discovery agent unchanged:
       ] },
 
     { "id": "submit_login", "kind": "click", "description": "Submit the login form",
-      "budget_ms": 8000,
+      "budget_ms": 8000, "on_fail": "abort",
       "locators": [
         { "strategy": "testid", "value": "login-submit" },
-        { "strategy": "role_name", "role": "button", "value": "Log in" }
+        { "strategy": "role_name", "value": "Log in", "role": "button" }
       ] },
 
     { "id": "open_savings", "kind": "click", "description": "Open the savings account detail page",
       "budget_ms": 8000, "on_fail": "handoff",
       "locators": [
-        { "strategy": "role_name", "role": "link", "value": "Savings" },
+        { "strategy": "role_name", "value": "Savings", "role": "link" },
         { "strategy": "text", "value": "Savings" }
       ] },
 
     { "id": "wait_for_balance", "kind": "wait_for", "description": "Wait for the balance to render",
-      "budget_ms": 3000,
+      "budget_ms": 3000, "on_fail": "abort",
       "locators": [ { "strategy": "testid", "value": "account-balance" } ] },
 
     { "id": "read_balance", "kind": "extract", "description": "Read the rendered balance",

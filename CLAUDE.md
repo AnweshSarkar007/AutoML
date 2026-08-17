@@ -330,7 +330,7 @@ agree. Adding a `StepKind` means updating `schema.py`, `engine.py`, `docs/artifa
     { "id": "open_savings", "kind": "click", "description": "Open the savings account detail page",
       "budget_ms": 8000, "on_fail": "handoff",
       "locators": [
-        { "strategy": "role_name", "role": "link", "value": "Savings", "nth": 0 },
+        { "strategy": "role_name", "value": "Savings", "role": "link", "nth": 0 },
         { "strategy": "text",      "value": "Savings" },
         { "strategy": "css",       "value": "tr[data-account-type='savings'] a" },
         { "strategy": "coordinates", "value": "612,318", "viewport": { "w": 1280, "h": 720 } }
