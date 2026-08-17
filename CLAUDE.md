@@ -274,11 +274,14 @@ Status = Literal["success", "needs_human", "policy_blocked", "failed"]
 
 Four frozen pydantic models, each with a `status: Literal[...]` discriminator, and
 `RunResult = Annotated[Success | NeedsHuman | PolicyBlocked | Failed, Field(discriminator="status")]`.
+Every variant carries `run_id` and `flow_id` (added on Day 2 per WORKFLOW.md 2.2/3.4, on top of what
+this section originally listed) plus `evidence_dir`, so a caller — or `scripts/reliability_run.py`
+parsing `--json` output — never has to reconstruct either path from the run_id convention in §9.
 
 | Result | Carries | Meaning |
 |---|---|---|
-| `Success` | `outputs: dict[str, str]`, `run_id`, `steps_completed`, `duration_ms` | Flow completed; outputs extracted. |
-| `NeedsHuman` | `step_id`, `reason`, `tried: list[LocatorStrategy]`, `handoff_path` | Ladder exhausted on a resolvable-in-principle step. Recoverable by a human. |
+| `Success` | `outputs: dict[str, str]`, `steps_completed`, `duration_ms`, `rung_stats: dict[str, int]` | Flow completed; `rung_stats` counts how many steps resolved at each `LocatorStrategy`, feeding Day 6's rung distribution. |
+| `NeedsHuman` | `step_id`, `reason`, `tried: list[LocatorStrategy]`, `handoff_path` | Ladder exhausted on a resolvable-in-principle step. Recoverable by a human; `handoff_path` points at the `evidence/intervention/...` file (§12). |
 | `PolicyBlocked` | `step_id`, `rule`, `detail` | Safety layer refused. **Never retried, never escalated to a human.** |
 | `Failed` | `step_id \| None`, `error_class`, `message` | Everything else, including unexpected crashes. |
 
