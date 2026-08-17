@@ -29,3 +29,10 @@ def page(browser: Browser) -> Iterator[Page]:
     page = browser.new_page()
     yield page
     page.close()
+
+
+@pytest.fixture
+def tmp_run(tmp_path: Path) -> Path:
+    """A throwaway root directory for evidence/artifact writes in tests, so
+    tests never touch the real evidence/ or artifacts/ trees."""
+    return tmp_path
