@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Cowpath Bank — Log in</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Log in</h1>
+      <p class="error" data-testid="login-error" hidden></p>
+      <form data-testid="login-form" onsubmit="handleLogin(event)">
+        <label for="username">Username</label>
+        <input id="username" name="username" type="text" autocomplete="username" data-testid="username" required />
+
+        <label for="password">Password</label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          autocomplete="current-password"
+          data-testid="password"
+          required
+        />
+
+        <button type="submit" data-testid="login-submit">Log in</button>
+      </form>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>
