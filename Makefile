@@ -11,8 +11,11 @@ lint:
 fmt:
 	$(PY) -m ruff check --fix . && $(PY) -m black .
 
+# pytest exits 5 when zero tests are collected — that's expected pre-Day-1
+# and must not fail CI, so it's treated as success; any other nonzero exit
+# (failures, errors) still fails the build.
 test:
-	$(PY) -m pytest
+	$(PY) -m pytest; code=$$?; if [ $$code -eq 5 ]; then exit 0; else exit $$code; fi
 
 # Never removes artifacts/ or evidence/ — those are committed deliverables.
 clean:
