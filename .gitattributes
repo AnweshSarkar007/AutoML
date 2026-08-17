@@ -1,0 +1,5 @@
+# Recipe lines in Makefile are tab-indented and shell-executed — CRLF
+# (introduced by core.autocrlf=true on Windows) can break `make`.
+Makefile text eol=lf
+*.sh text eol=lf
+*.py text eol=lf
