@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+
+# Environment secrets
+.env
+
+# Tooling caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Playwright
+playwright-report/
+test-results/
+
+# Do NOT add blanket *.json / *.png / *.jsonl rules here — they would
+# silently swallow artifacts/ and evidence/, which are committed deliverables.
