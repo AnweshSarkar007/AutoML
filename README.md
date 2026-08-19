@@ -1,4 +1,3 @@
-# Cowpath
 
 Browser workflows are usually automated one of two ways: hand-written scripts that break the
 moment a `div` moves, or an LLM agent that re-reasons through the same click-path on every single
@@ -19,9 +18,6 @@ each step carries a ranked ladder of ways to find its element rather than one br
    with no AI involvement, walking the ladder rung by rung until one resolves. A safety layer
    (origin allowlist, destructive-action denylist, secret redaction) gates both paths, and a
    human-handoff mechanism takes over when replay genuinely can't resolve a step.
-
-See [CLAUDE.md](CLAUDE.md) for the full architecture contract and [docs/artifact-spec.md](docs/artifact-spec.md)
-for the artifact format.
 
 ## Directory map
 
